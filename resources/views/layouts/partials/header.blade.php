@@ -20,14 +20,88 @@
 
         <!-- Right Side - User Menu & Actions -->
         <div class="flex items-center space-x-4">
-            <!-- Notifications (Optional) -->
-            <button class="relative text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300 focus:outline-none">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                </svg>
-                <!-- Notification Badge -->
-                <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-800"></span>
-            </button>
+            <!-- Notifications -->
+            <div class="relative" x-data="notificationDropdown()" x-init="init()">
+                <button 
+                    @click="toggleDropdown()" 
+                    class="relative p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-none transition">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                    </svg>
+                    <span 
+                        x-show="unreadCount > 0" 
+                        x-text="unreadCount"
+                        class="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                    </span>
+                </button>
+
+                <!-- Notification Dropdown -->
+                <div 
+                    x-show="open" 
+                    @click.away="open = false"
+                    x-transition:enter="transition ease-out duration-200"
+                    x-transition:enter-start="opacity-0 scale-95"
+                    x-transition:enter-end="opacity-100 scale-100"
+                    x-transition:leave="transition ease-in duration-75"
+                    x-transition:leave-start="opacity-100 scale-100"
+                    x-transition:leave-end="opacity-0 scale-95"
+                    class="absolute right-0 z-50 mt-2 w-80 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+                    style="display: none;">
+                    
+                    <!-- Header -->
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h3>
+                            <div class="flex items-center space-x-2">
+                                <!-- Mark All as Read Button -->
+                                <button 
+                                    @click="markAllAsRead()" 
+                                    x-show="unreadCount > 0"
+                                    class="inline-flex items-center px-2.5 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Mark all read
+                                </button>
+                                <a href="{{ route('notifications.index') }}" class="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                                    View all
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notifications List -->
+                    <div class="max-h-96 overflow-y-auto">
+                        <!-- No notifications -->
+                        <template x-if="notifications.length === 0">
+                            <div class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                                No new notifications
+                            </div>
+                        </template>
+                        
+                        <!-- Notifications -->
+                        <template x-for="notification in notifications" :key="notification.id">
+                            <div class="block border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+                                <a 
+                                    :href="notification.borrowing_id ? '/pinjam/' + notification.borrowing_id + '/show' : '#'" 
+                                    class="block p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                                    :class="{ 'bg-blue-50 dark:bg-blue-900/20': !notification.is_read }">
+                                    <div class="flex items-start">
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-gray-900 dark:text-white" x-text="notification.title"></p>
+                                            <p class="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2" x-text="notification.message"></p>
+                                            <p class="text-xs text-gray-500 dark:text-gray-500 mt-1" x-text="formatDate(notification.created_at)"></p>
+                                        </div>
+                                        <template x-if="!notification.is_read">
+                                            <span class="ml-2 h-2 w-2 rounded-full bg-blue-600 flex-shrink-0"></span>
+                                        </template>
+                                    </div>
+                                </a>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
 
             <!-- Dark Mode Toggle -->
             <button 
@@ -82,13 +156,12 @@
                         </div>
                     </a>
 
-                    <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <a href="{{ route('notifications.index') }}" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
                         <div class="flex items-center">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                             </svg>
-                            Settings
+                            Notifications
                         </div>
                     </a>
 
@@ -112,6 +185,63 @@
 </header>
 
 <script>
+    // Alpine.js Notification Component
+    function notificationDropdown() {
+        return {
+            open: false,
+            unreadCount: 0,
+            notifications: [],
+            
+            init() {
+                this.fetchUnreadCount();
+                // Auto refresh every 30 seconds
+                setInterval(() => {
+                    this.fetchUnreadCount();
+                }, 30000);
+            },
+            
+            async fetchUnreadCount() {
+                try {
+                    const response = await fetch('/notifications/unread-count');
+                    const data = await response.json();
+                    this.unreadCount = data.count;
+                } catch (error) {
+                    console.error('Error fetching unread count:', error);
+                }
+            },
+            
+            async toggleDropdown() {
+                this.open = !this.open;
+                if (this.open) {
+                    await this.fetchNotifications();
+                }
+            },
+            
+            async fetchNotifications() {
+                try {
+                    const response = await fetch('/notifications/recent');
+                    const data = await response.json();
+                    this.notifications = data;
+                } catch (error) {
+                    console.error('Error fetching notifications:', error);
+                }
+            },
+            
+            formatDate(dateString) {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diff = Math.floor((now - date) / 1000); // difference in seconds
+                
+                if (diff < 60) return 'Just now';
+                if (diff < 3600) return Math.floor(diff / 60) + ' minutes ago';
+                if (diff < 86400) return Math.floor(diff / 3600) + ' hours ago';
+                if (diff < 604800) return Math.floor(diff / 86400) + ' days ago';
+                
+                return date.toLocaleDateString();
+            }
+        }
+    }
+
     // Dark Mode Toggle
     function toggleDarkMode() {
         const html = document.documentElement;
@@ -141,12 +271,16 @@
         
         if (darkMode === 'true') {
             html.classList.add('dark');
-            sunIcon.classList.remove('hidden');
-            moonIcon.classList.add('hidden');
+            if (sunIcon && moonIcon) {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            }
         } else {
             html.classList.remove('dark');
-            sunIcon.classList.add('hidden');
-            moonIcon.classList.remove('hidden');
+            if (sunIcon && moonIcon) {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
         }
     }
 
@@ -161,7 +295,9 @@
         const userMenuButton = document.getElementById('userMenuButton');
         const userDropdown = document.getElementById('userDropdown');
         
-        if (!userMenuButton.contains(event.target) && !userDropdown.contains(event.target)) {
+        if (userMenuButton && userDropdown && 
+            !userMenuButton.contains(event.target) && 
+            !userDropdown.contains(event.target)) {
             userDropdown.classList.add('hidden');
         }
     });

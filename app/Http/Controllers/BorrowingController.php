@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Barangs;
 use App\Models\Borrowing;
-use Illuminate\Support\Facades\Auth;  
+use App\Models\Barangs;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class BorrowingController extends Controller
 {
@@ -53,45 +54,68 @@ class BorrowingController extends Controller
     {
         $request->validate([
             'barang_id' => 'required|exists:barangs,id',
-            'borrowed_at' => 'required|date',
-            'return_due_date' => 'required|date|after:borrowed_at',
-            'reason' => 'nullable|string|max:255',
+            'borrowed_date' => 'required|date|after_or_equal:today',
+            'return_date' => 'required|date|after_or_equal:borrowed_date',
+            'reason' => 'required|string|max:500',
         ]);
 
-        $barangs = Barangs::find($request->barang_id);
+        $barang = Barangs::findOrFail($request->barang_id);
 
-        if ($barangs->stok < 1) {
-            return redirect()->back()->withErrors(['stock' => 'Insufficient stock.']);
+        if ($barang->stok < 1) {
+            return back()->with('error', 'Item is currently out of stock.');
         }
+
+        // Gabungkan date dengan waktu saat ini untuk borrowed_at
+        $borrowedAt = Carbon::parse($request->borrowed_date)->setTime(
+            now()->hour,
+            now()->minute,
+            now()->second
+        );
+
+        // Gabungkan return_date dengan waktu default 17:00 (5 PM)
+        $returnDueDate = Carbon::parse($request->return_date)->setTime(17, 0, 0);
 
         Borrowing::create([
             'user_id' => Auth::id(),
             'barang_id' => $request->barang_id,
-            'borrowed_at' => $request->borrowed_at,
-            'return_due_date' => $request->return_due_date,
+            'borrowed_at' => $borrowedAt,
+            'return_due_date' => $returnDueDate,
             'status' => 'pending',
             'reason' => $request->reason,
         ]);
 
-        return redirect()->route('dashboard')->with('success', 'Borrowing request submitted successfully.');
+        // Kirim notifikasi ke semua admin
+        NotificationController::notifyAdmins(
+            'new_borrowing_request',
+            'New Borrowing Request',
+            Auth::user()->name . ' has requested to borrow ' . $barang->nama_barang,
+            null
+        );
+
+        return redirect()->route('pinjam.history')->with('success', 'Borrowing request submitted successfully. Waiting for admin approval.');
     }
 
-    public function returnItem(Request $request, Borrowing $borrowing){
-        // Pastikan peminjaman ada dan statusnya adalah 'borrowed'
+    public function returnItem(Request $request, Borrowing $borrowing)
+    {
         if ($borrowing->user_id !== Auth::id()){
             abort(403, 'You do not have access to return this borrowing.');
         }
 
-        // Cek status peminjaman
         if ($borrowing->status !== 'borrowed'){
             return redirect()->back()->with('error', 'This item is not currently borrowed.');
         }
 
         $borrowing->update(['status' => 'waiting_return']);
 
+        // Kirim notifikasi ke semua admin
+        NotificationController::notifyAdmins(
+            'return_request',
+            'Return Request',
+            Auth::user()->name . ' has requested to return ' . $borrowing->barang->nama_barang,
+            $borrowing->id
+        );
+
         return redirect()->route('pinjam.history')->with('success', 'Return Request Submitted. Please bring the item to admin for scanning');
-
-
     }
 
     /**
@@ -133,19 +157,32 @@ class BorrowingController extends Controller
     
     public function update(Request $request, Borrowing $borrowing)
     {
-        if ($borrowing->user_id !== Auth::id() || $borrowing->status !== 'pending') {
-            abort(403);
-        }
-
         $request->validate([
-            'return_due_date' => 'required|date|after:today',
+            'borrowed_date' => 'required|date',
+            'return_date' => 'required|date|after_or_equal:borrowed_date',
+            'reason' => 'required|string|max:500',
         ]);
+
+        // Update dengan waktu yang sudah ada atau set default
+        $borrowedAt = Carbon::parse($request->borrowed_date)->setTime(
+            Carbon::parse($borrowing->borrowed_at)->hour,
+            Carbon::parse($borrowing->borrowed_at)->minute,
+            Carbon::parse($borrowing->borrowed_at)->second
+        );
+
+        $returnDueDate = Carbon::parse($request->return_date)->setTime(
+            Carbon::parse($borrowing->return_due_date)->hour,
+            Carbon::parse($borrowing->return_due_date)->minute,
+            Carbon::parse($borrowing->return_due_date)->second
+        );
 
         $borrowing->update([
-            'return_due_date' => $request->return_due_date,
+            'borrowed_at' => $borrowedAt,
+            'return_due_date' => $returnDueDate,
+            'reason' => $request->reason,
         ]);
 
-        return redirect()->route('dashboard')->with('success', 'Borrowing request updated successfully.');
+        return redirect()->route('pinjam.history')->with('success', 'Borrowing request updated successfully.');
     }
 
     

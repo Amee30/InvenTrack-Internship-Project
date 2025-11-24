@@ -67,12 +67,22 @@
                             
                             <div class="mb-2 flex">
                                 <span class="w-1/3 text-gray-600 dark:text-gray-400 text-sm">Borrowing Date:</span>
-                                <span class="w-2/3 font-medium text-gray-900 dark:text-white text-sm">{{ \Carbon\Carbon::parse($borrowing->borrowed_at)->format('d/m/Y') }}</span>
+                                <span class="w-2/3 font-medium text-gray-900 dark:text-white text-sm">
+                                    {{ \Carbon\Carbon::parse($borrowing->borrowed_at)->format('d/m/Y H:i') }}
+                                    <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                                        ({{ \Carbon\Carbon::parse($borrowing->borrowed_at)->diffForHumans() }})
+                                    </span>
+                                </span>
                             </div>
                             
                             <div class="mb-2 flex">
                                 <span class="w-1/3 text-gray-600 dark:text-gray-400 text-sm">Return Date:</span>
-                                <span class="w-2/3 font-medium text-gray-900 dark:text-white text-sm">{{ \Carbon\Carbon::parse($borrowing->return_due_date)->format('d/m/Y') }}</span>
+                                <span class="w-2/3 font-medium text-gray-900 dark:text-white text-sm">
+                                    {{ \Carbon\Carbon::parse($borrowing->return_due_date)->format('d/m/Y H:i') }}
+                                    <span class="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                                        ({{ \Carbon\Carbon::parse($borrowing->return_due_date)->diffForHumans() }})
+                                    </span>
+                                </span>
                             </div>
 
                             <div class="mb-2 flex">
@@ -156,6 +166,14 @@
                                     {{ $borrowing->reject_reason }}
                                 </span>
                             </div>
+                            @if($borrowing->cancelled_at)
+                            <div class="mb-2 flex">
+                                <span class="w-1/3 text-gray-600 dark:text-gray-400 text-sm">Cancelled At:</span>
+                                <span class="w-2/3 font-medium text-gray-600 dark:text-gray-400 text-sm">
+                                    {{ \Carbon\Carbon::parse($borrowing->cancelled_at)->format('d/m/Y H:i') }}
+                                </span>
+                            </div>
+                            @endif
                             @endif
                         </div>
                         

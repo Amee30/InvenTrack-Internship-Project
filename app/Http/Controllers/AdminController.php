@@ -47,22 +47,14 @@ class AdminController extends Controller
             ['status' => 'waiting_pickup']
         );
 
-        // Kurangi stok barang
-        // $borrowing->barang->decrement('stok');
-
-        // Catat pergerakan barang keluar
-        // BarangMovement::create(
-        //     [
-        //         'barang_id' => $borrowing->barang_id,
-        //         'type' => 'out',
-        //         'quantity' => 1,
-        //         'source' => null,
-        //         'reason' => 'Borrowed by '. $borrowing->user->name,
-        //         'date' => now()->format('Y-m-d'),
-        //         'notes' => 'Borrower ID'. $borrowing->user_id,
-        //         'user_id' => Auth::id(),
-        //     ]
-        //     );
+        // Kirim notifikasi ke user
+        NotificationController::createNotification(
+            $borrowing->user_id,
+            'borrowing_approved',
+            'Borrowing Request Approved',
+            'Your borrowing request for ' . $borrowing->barang->nama_barang . ' has been approved. Please come to pickup the item.',
+            $borrowing->id
+        );
 
         return redirect()->back()->with('success', 'Borrowing approved. The item is ready for pickup.');
     }
@@ -107,14 +99,19 @@ class AdminController extends Controller
             'user_id' => Auth::id(),
         ]);
 
+        // Kirim notifikasi ke user
+        NotificationController::createNotification(
+            $borrowing->user_id,
+            'item_picked_up',
+            'Item Successfully Picked Up',
+            'You have successfully picked up ' . $barang->nama_barang . '. Please return it by ' . $borrowing->return_due_date,
+            $borrowing->id
+        );
+
         return response()->json([
             'success' => true,
-            'message' => 'Pickup successful. The item has been borrowed.',
-            'data' => [
-                'barang' => $barang->nama_barang,
-                'peminjam' => $borrowing->user->name,
-                'tanggal_kembali' => $borrowing->return_due_date,
-            ],
+            'message' => 'Item picked up successfully.',
+            'borrowing' => $borrowing,
         ]);
     }
 
@@ -152,21 +149,26 @@ class AdminController extends Controller
             'barang_id' => $barang->id,
             'type' => 'in',
             'quantity' => 1,
-            'source' => 'Return Borrowing',
-            'reason' => 'Returned by ' . $borrowing->user->name,
+            'source' => 'Return from ' . $borrowing->user->name,
+            'reason' => 'Item returned',
             'date' => now()->format('Y-m-d'),
-            'notes' => 'Return from Borrower ID ' . $borrowing->id,
+            'notes' => 'Borrower ID ' . $borrowing->user_id,
             'user_id' => Auth::id(),
         ]);
 
+        // Kirim notifikasi ke user
+        NotificationController::createNotification(
+            $borrowing->user_id,
+            'item_returned',
+            'Item Successfully Returned',
+            'You have successfully returned ' . $barang->nama_barang . '. Thank you for using our service.',
+            $borrowing->id
+        );
+
         return response()->json([
             'success' => true,
-            'message' => 'Return successful. The item has been returned.',
-            'data' => [
-                'barang' => $barang->nama_barang,
-                'peminjam' => $borrowing->user->name,
-                'tanggal_kembali' => $borrowing->return_due_date,
-            ],
+            'message' => 'Item returned successfully.',
+            'borrowing' => $borrowing,
         ]);
     }
 
@@ -382,10 +384,19 @@ class AdminController extends Controller
         // Update status peminjaman menjadi 'rejected' dan tambahkan alasan
         $borrowing->update([
             'status' => 'rejected',
-            'reject_reason' => $request->reject_reason
+            'reject_reason' => $request->reject_reason,
         ]);
 
-        return redirect()->back()->with('success', 'Borrowing rejected successfully.');
+        // Kirim notifikasi ke user
+        NotificationController::createNotification(
+            $borrowing->user_id,
+            'borrowing_rejected',
+            'Borrowing Request Rejected',
+            'Your borrowing request for ' . $borrowing->barang->nama_barang . ' has been rejected. Reason: ' . $request->reject_reason,
+            $borrowing->id
+        );
+
+        return redirect()->back()->with('success', 'Borrowing request rejected successfully.');
     }
 
     /**

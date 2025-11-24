@@ -29,9 +29,8 @@
 - **Admin Dashboard**: System statistics overview (Total Items, Users, Borrowings, etc.)
 - **Item Management**: 
   - CRUD items with photos
-  - Generate QR Code for each item
+  - Auto Generate QR Code for each item
   - Print QR Code
-  - Serial number tracking
   - Stock management
 - **User Management**: CRUD users with role management (Admin/User)
 - **Borrowing Management**: 
@@ -39,9 +38,7 @@
   - Mark items as borrowed/returned
   - View borrowing details
 - **Movement History**: Track item movements
-- **Export Data**: Export data to Excel (Items, Users, Borrowings, Movements)
-- **Search & Filter**: Easy data search and filtering
-
+- **Export Data**: Export data to Excel or PDF (Items, Users, Borrowings, Movements)
 ## 🛠️ Tech Stack
 
 - **Framework**: Laravel 12.0
@@ -119,6 +116,19 @@
    ```
 
    Your app is running at `http://localhost:8000`
+   
+
+9. **Set Up Scheduler (Optional)**
+
+   To enable automatic cancellation of unpicked borrowings after 1 day, set up the Laravel scheduler:
+   - For local development, run:
+     ```bash
+     php artisan schedule:work
+     ```
+   - For production, add the following cron entry:
+     ```cron
+     * * * * * cd /path/to/your/project && php artisan schedule:run >> /dev/null 2>&1
+     ```
 
 ## 👥 Default Credentials
 
@@ -139,6 +149,7 @@ After seeding the database, you can use the following default credentials to log
 - `barangs` - Item Data
 - `borrowings` - Borrowing Data
 - `movements` - Item Movement History
+- `notifications` - System Notifications
 
 ## 🎯 How To Use
 

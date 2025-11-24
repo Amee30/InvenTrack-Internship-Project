@@ -115,7 +115,7 @@
                                 @endif
                                 
                                 <!-- File Upload -->
-                                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                                <div id="dropzone" class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-600 border-dashed rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors cursor-pointer">
                                     <div class="space-y-1 text-center">
                                         <svg class="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                                             <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -135,6 +135,9 @@
                                 <div id="imagePreview" class="mt-4 hidden">
                                     <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">New Photo Preview:</p>
                                     <img id="preview" class="rounded-lg border border-gray-300 dark:border-gray-600 max-h-64 mx-auto" alt="New Preview" />
+                                    <button type="button" onclick="removeImage()" class="mt-2 mx-auto block text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300">
+                                        Remove Image
+                                    </button>
                                 </div>
                                 
                                 <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
@@ -167,12 +170,98 @@
     </div>
 
     <script>
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('foto');
+        
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+        
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        
+        // Highlight drop zone when item is dragged over it
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, highlight, false);
+        });
+        
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, unhighlight, false);
+        });
+        
+        function highlight(e) {
+            dropzone.classList.add('border-blue-500', 'dark:border-blue-400', 'bg-blue-50', 'dark:bg-blue-900/20');
+        }
+        
+        function unhighlight(e) {
+            dropzone.classList.remove('border-blue-500', 'dark:border-blue-400', 'bg-blue-50', 'dark:bg-blue-900/20');
+        }
+        
+        // Handle dropped files
+        dropzone.addEventListener('drop', handleDrop, false);
+        
+        // Handle click on dropzone
+        dropzone.addEventListener('click', function(e) {
+            if (e.target.id !== 'foto' && !e.target.closest('label[for="foto"]')) {
+                fileInput.click();
+            }
+        });
+        
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            
+            if (files.length > 0) {
+                // Validate file type
+                const file = files[0];
+                const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+                
+                if (!validTypes.includes(file.type)) {
+                    alert('Please upload only PNG, JPG, or JPEG files.');
+                    return;
+                }
+                
+                // Validate file size (2MB = 2097152 bytes)
+                if (file.size > 2097152) {
+                    alert('File size must be less than 2MB.');
+                    return;
+                }
+                
+                // Create a new FileList and assign to input
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+                
+                // Preview the image
+                previewImage({ target: { files: [file] } });
+            }
+        }
+
         function previewImage(event) {
             const file = event.target.files[0];
             const preview = document.getElementById('preview');
             const previewContainer = document.getElementById('imagePreview');
             
             if (file) {
+                // Validate file type
+                const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Please upload only PNG, JPG, or JPEG files.');
+                    fileInput.value = '';
+                    return;
+                }
+                
+                // Validate file size (2MB)
+                if (file.size > 2097152) {
+                    alert('File size must be less than 2MB.');
+                    fileInput.value = '';
+                    return;
+                }
+                
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     preview.src = e.target.result;
@@ -182,6 +271,16 @@
             } else {
                 previewContainer.classList.add('hidden');
             }
+        }
+        
+        function removeImage() {
+            const preview = document.getElementById('preview');
+            const previewContainer = document.getElementById('imagePreview');
+            const fileInput = document.getElementById('foto');
+            
+            preview.src = '';
+            previewContainer.classList.add('hidden');
+            fileInput.value = '';
         }
     </script>
 </x-admin-layout>

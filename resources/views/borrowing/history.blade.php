@@ -1,4 +1,3 @@
-<!-- filepath: /d:/laragon/www/pkl-pinjam-barang/resources/views/borrowing/history.blade.php -->
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-white dark:text-white leading-tight">
@@ -366,7 +365,7 @@
                                     Details
                                 </a>
 
-                                @if($borrowing->status == 'pending')
+                                @if($borrowing->status == 'pending' && $borrowing->status == 'waiting_pickup')
                                     <form action="{{ route('pinjam.destroy', $borrowing->id) }}" 
                                           method="POST" 
                                           class="flex-1"

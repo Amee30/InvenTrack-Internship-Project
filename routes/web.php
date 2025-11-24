@@ -7,6 +7,7 @@ use App\Http\Controllers\BorrowingController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BarangMovementController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\NotificationController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -33,6 +34,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/pinjam/{borrowing}/receipt', [BorrowingController::class, 'generateReceipt'])
         ->name('pinjam.receipt')
         ->middleware(['auth']);
+
+    // Notification routes
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount']);
+    Route::get('/notifications/recent', [NotificationController::class, 'getRecent']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
+    Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {

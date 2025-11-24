@@ -83,7 +83,7 @@
 <body>
     <!-- ITEMS PAGE -->
     <div class="header">
-        <h1>ITEM BORROWING SYSTEM</h1>
+        <h1>InvenTrack</h1>
         <p>Complete Data Export Report</p>
         <p>Generated: {{ date('d F Y, H:i') }}</p>
     </div>
@@ -120,7 +120,7 @@
 
     <!-- USERS PAGE -->
     <div class="header">
-        <h1>ITEM BORROWING SYSTEM</h1>
+        <h1>InvenTrack</h1>
         <p>Complete Data Export Report</p>
         <p>Generated: {{ date('d F Y, H:i') }}</p>
     </div>
@@ -161,7 +161,7 @@
 
     <!-- MOVEMENTS PAGE -->
     <div class="header">
-        <h1>ITEM BORROWING SYSTEM</h1>
+        <h1>InvenTrack</h1>
         <p>Complete Data Export Report</p>
         <p>Generated: {{ date('d F Y, H:i') }}</p>
     </div>
@@ -206,7 +206,7 @@
 
     <!-- BORROWINGS PAGE -->
     <div class="header">
-        <h1>ITEM BORROWING SYSTEM</h1>
+        <h1>InvenTrack</h1>
         <p>Complete Data Export Report</p>
         <p>Generated: {{ date('d F Y, H:i') }}</p>
     </div>
@@ -254,7 +254,7 @@
     </table>
 
     <div class="footer">
-        <p>© {{ date('Y') }} Item Borrowing System - All Rights Reserved</p>
+        <p>© {{ date('Y') }} InvenTrack - All Rights Reserved</p>
     </div>
 </body>
 </html>
