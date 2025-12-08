@@ -18,6 +18,11 @@ class Barangs extends Model
         'qr_code',
         'stok',
         'foto',
+        'is_hidden',
+    ];
+
+    protected $casts = [
+        'is_hidden' => 'boolean',
     ];
 
     public function borrowings()

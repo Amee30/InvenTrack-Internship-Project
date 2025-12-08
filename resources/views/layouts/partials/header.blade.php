@@ -226,6 +226,25 @@
                     console.error('Error fetching notifications:', error);
                 }
             },
+
+            async markAllAsRead() {
+                try {
+                    const response = await fetch('/notifications/mark-all-read', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    if (response.ok) {
+                        // Update local state
+                        this.notifications = this.notifications.map(n => ({ ...n, is_read: true }));
+                        this.unreadCount = 0;
+                    }
+                } catch (error) {
+                    console.error('Error marking all as read:', error);
+                }
+            },
             
             formatDate(dateString) {
                 const date = new Date(dateString);

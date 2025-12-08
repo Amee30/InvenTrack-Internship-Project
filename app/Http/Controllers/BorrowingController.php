@@ -17,26 +17,25 @@ class BorrowingController extends Controller
     public function index(Request $request)
     {
         // Get filter kategori dari request
-        $kategori = $request->get('kategori');
-        
-        // Query barang dengan filter
-        $barangsQuery = Barangs::query();
-        
-        if ($kategori && $kategori !== 'all') {
-            $barangsQuery->where('kategori', $kategori);
-        }
-        
-        $barangs = $barangsQuery->get();
-        
-        // Get semua kategori unik untuk dropdown
-        $categories = Barangs::select('kategori')
+        $selectedKategori = $request->get('kategori');
+
+        // Query barang dengan filter is_hidden dan kategori
+        $barangs = Barangs::where('is_hidden', false)
+            ->when($selectedKategori && $selectedKategori !== 'all', function ($query) use ($selectedKategori) {
+                return $query->where('kategori', $selectedKategori);
+            })
+            ->get();
+
+        // Get semua kategori unik untuk dropdown (hanya dari barang yang tidak hidden)
+        $kategori = Barangs::where('is_hidden', false)
+            ->select('kategori')
             ->distinct()
             ->orderBy('kategori')
             ->pluck('kategori');
         
         $borrowings = Borrowing::where('user_id', Auth::id())->with('barang')->get();
 
-        return view('dashboard', compact('barangs', 'borrowings', 'categories', 'kategori'));
+        return view('dashboard', compact('barangs', 'borrowings', 'kategori', 'selectedKategori'));
     }
 
     /**
@@ -64,6 +63,24 @@ class BorrowingController extends Controller
         if ($barang->stok < 1) {
             return back()->with('error', 'Item is currently out of stock.');
         }
+
+        $existingRequest = Borrowing::where('user_id', Auth::id())
+            ->where('barang_id', $request->barang_id)
+            ->whereIn('status', ['pending', 'waiting_pickup', 'borrowed', 'waiting_return'])
+            ->exists();
+        
+        if ($existingRequest) {
+            return back()->with('error', 'You already have a pending borrowing request for this item.');
+        }
+        
+        $activeRequestCount = Borrowing::where('barang_id', $request->barang_id)
+            ->whereIn('status', ['pending', 'waiting_pickup', 'borrowed', 'waiting_return'])
+            ->count();
+
+        if ($activeRequestCount >= $barang->stok) {
+            return back()->with('error', 'This item is currently unavailable. All stock is either requested or borrowed by other user.');
+        }
+
 
         // Gabungkan date dengan waktu saat ini untuk borrowed_at
         $borrowedAt = Carbon::parse($request->borrowed_date)->setTime(
@@ -202,8 +219,9 @@ class BorrowingController extends Controller
 
     public function generateReceipt(Borrowing $borrowing)
     {
+        $allowedStatuses = ['approved', 'borrowed', 'returned', 'waiting_return', 'waiting_pickup'];
         // cek status peminjaman
-        if ($borrowing->status != 'approved' && $borrowing->status != 'borrowed' && $borrowing->status != 'returned' && $borrowing->status != 'waiting_return' && $borrowing->status != 'waiting_pickup') {
+        if (!in_array($borrowing->status, $allowedStatuses)) {
             abort(403, 'Receipt can only be generated for approved, borrowed, or returned borrowings.');
         }
 

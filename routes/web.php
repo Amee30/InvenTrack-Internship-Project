@@ -68,6 +68,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/export', [ExportController::class, 'showExportOptions'])->name('export.options');
     Route::get('/export/excel', [ExportController::class, 'exportExcel'])->name('export.excel');
     Route::get('/export/pdf', [ExportController::class, 'exportPdf'])->name('export.pdf');
+
+    Route::post('/barang/{barang}/toggle-visibility', [AdminController::class, 'toggleVisibility'])
+        ->name('barang.toggleVisibility');
 });
 
 require __DIR__.'/auth.php';

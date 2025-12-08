@@ -31,17 +31,17 @@
                                     name="kategori" 
                                     onchange="document.getElementById('filterForm').submit()"
                                     class="bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 rounded-md shadow-sm text-sm py-2 px-3 min-w-[150px]">
-                                    <option value="all" {{ (!request('kategori') || request('kategori') == 'all') ? 'selected' : '' }}>
+                                    <option value="all" {{ (!isset($selectedKategori) || $selectedKategori == 'all') ? 'selected' : '' }}>
                                         All Categories
                                     </option>
-                                    @foreach($categories as $category)
-                                        <option value="{{ $category }}" {{ request('kategori') == $category ? 'selected' : '' }}>
-                                            {{ $category }}
+                                    @foreach($kategori as $kat)
+                                        <option value="{{ $kat }}" {{ (isset($selectedKategori) && $selectedKategori == $kat) ? 'selected' : '' }}>
+                                            {{ $kat }}
                                         </option>
                                     @endforeach
                                 </select>
                                 
-                                @if(request('kategori') && request('kategori') !== 'all')
+                                @if(isset($selectedKategori) && $selectedKategori !== 'all')
                                     <a href="{{ route('dashboard') }}" 
                                        class="inline-flex items-center px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-xs font-medium rounded-md transition-colors duration-200"
                                        title="Clear Filter">
@@ -125,8 +125,8 @@
                                 </svg>
                                 <h3 class="mt-2 text-sm font-medium text-gray-900 dark:text-white">No items found</h3>
                                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                    @if(request('kategori') && request('kategori') !== 'all')
-                                        No items available in "{{ request('kategori') }}" category.
+                                    @if(isset($selectedKategori) && $selectedKategori !== 'all')
+                                        No items available in "{{ $selectedKategori }}" category.
                                     @else
                                         No items available at the moment.
                                     @endif

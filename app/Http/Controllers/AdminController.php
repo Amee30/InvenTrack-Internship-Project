@@ -78,6 +78,7 @@ class AdminController extends Controller
             ->where('status', 'waiting_pickup')
             ->orderBy('created_at', 'desc')
             ->first();
+
         if (!$borrowing) {
             return response()->json([
                 'success' => false,
@@ -111,7 +112,11 @@ class AdminController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Item picked up successfully.',
-            'borrowing' => $borrowing,
+            'data' => [
+                'barang' => $barang->nama_barang,
+                'peminjam' => $borrowing->user->name,
+                'tanggal_kembali' => $borrowing->return_due_date->format('d M Y'),
+            ]
         ]);
     }
 
@@ -168,7 +173,11 @@ class AdminController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Item returned successfully.',
-            'borrowing' => $borrowing,
+            'data' => [
+                'barang' => $barang->nama_barang,
+                'peminjam' => $borrowing->user->name,
+                'tanggal_kembali' => null,
+            ]
         ]);
     }
 
@@ -233,7 +242,8 @@ class AdminController extends Controller
      */
     public function create()
     {
-        return view('admin.barangs.create');
+        $barangs = Barangs::all();
+        return view('admin.barangs.create', compact('barangs'));
     }
 
     /**
@@ -421,5 +431,15 @@ class AdminController extends Controller
                 'message' => $e->getMessage()
             ], 404);
         }
+    }
+
+    public function toggleVisibility(Barangs $barang)
+    {
+        $barang->update(
+            ['is_hidden' => !$barang->is_hidden]
+        );
+
+        $status = $barang->is_hidden ? 'hidden' : 'visible';
+        return redirect()->back()->with('success', "Item visibility changed. The item is now {$status}.");
     }
 }

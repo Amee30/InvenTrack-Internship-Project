@@ -4,9 +4,14 @@
             {{ __('Submit Borrowing Request') }}
         </h2>
     </x-slot>
-
+    
     <div class="py-12 mt-4">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @if(session('error'))
+                    <div class="bg-green-100 dark:bg-red-900 border border-white dark:border-gray-700 text-white dark:text-white px-4 py-3 rounded relative mb-4" role="alert">
+                        <span class="block sm:inline">{{ session('error') }}</span>
+                    </div>
+                @endif
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 dark:border-gray-700">
                 <div class="p-6 text-gray-900 dark:text-white">
                     <form method="POST" action="{{ route('pinjam.store') }}">

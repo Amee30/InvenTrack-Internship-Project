@@ -31,6 +31,31 @@
                         
                         <form method="POST" action="{{ route('admin.barang.store') }}" enctype="multipart/form-data" class="space-y-6">
                             @csrf
+
+                            <!-- Select Existing Item Dropdown -->
+                            <div>
+                                <label for="existing_item" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Select Existing Item (Optional)
+                                </label>
+                                <select 
+                                    id="existing_item" 
+                                    class="block mt-1 w-full bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 rounded-md shadow-sm"
+                                    onchange="fillFormFromExisting()">
+                                    <option value="">-- Choose to autofill from existing item --</option>
+                                    @foreach($barangs ?? [] as $barang)
+                                        <option value="{{ $barang->id }}" 
+                                                data-nama="{{ $barang->nama_barang }}"
+                                                data-kategori="{{ $barang->kategori }}"
+                                                data-source="{{ $barang->source ?? '' }}"
+                                                data-foto="{{ $barang->foto ? asset('storage/' . $barang->foto) : '' }}">
+                                            {{ $barang->nama_barang }} - {{ $barang->kategori }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    Select an item to automatically fill the form with its details
+                                </p>
+                            </div>
     
                             <!-- Item Name -->
                             <div>
@@ -166,6 +191,39 @@
     </div>
 
     <script>
+        // Function to fill form from existing item
+        function fillFormFromExisting() {
+            const select = document.getElementById('existing_item');
+            const selectedOption = select.options[select.selectedIndex];
+            
+            if (selectedOption.value) {
+                // Fill form fields
+                document.getElementById('nama_barang').value = selectedOption.dataset.nama || '';
+                document.getElementById('kategori').value = selectedOption.dataset.kategori || '';
+                document.getElementById('source').value = selectedOption.dataset.source || '';
+                
+                // Keep serial number empty
+                document.getElementById('serial_number').value = '';
+                
+                // Handle photo preview
+                const fotoUrl = selectedOption.dataset.foto;
+                if (fotoUrl) {
+                    const preview = document.getElementById('preview');
+                    const previewContainer = document.getElementById('imagePreview');
+                    
+                    preview.src = fotoUrl;
+                    previewContainer.classList.remove('hidden');
+                }
+            } else {
+                // Clear form if no item selected
+                document.getElementById('nama_barang').value = '';
+                document.getElementById('kategori').value = '';
+                document.getElementById('source').value = '';
+                document.getElementById('serial_number').value = '';
+                removeImage();
+            }
+        }
+
         const dropzone = document.getElementById('dropzone');
         const fileInput = document.getElementById('foto');
         
