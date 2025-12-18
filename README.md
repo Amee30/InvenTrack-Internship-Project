@@ -273,7 +273,7 @@ Developed with ❤️ by Darma
 
 ---
 
-**TL;DR**: Some variables and parts of the code documentation are written in Indonesian. Sorry about that.
+**Note**: Some variables and parts of the code documentation are written in Indonesian. Sorry about that.
 
 ---
 
