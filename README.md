@@ -28,16 +28,30 @@
 ### 👨‍💼 Admin Features
 - **Admin Dashboard**: System statistics overview (Total Items, Users, Borrowings, etc.)
 - **Item Management**: 
-  - CRUD items with photos
-  - Auto Generate QR Code for each item
+  - CRUD items with photos, manufacturer, model, serial number, and asset tag
+  - Smart QR Code generation (Priority: Asset Tag > Serial Number > Auto Generate)
   - Print QR Code
-  - Stock management
+  - Stock management with movement tracking
+  - Hide/Show items from user dashboard
+  - Auto-fill form from existing items
+  - Unique validation for serial numbers and asset tags
+- **Category Management**: 
+  - Create, edit, and delete item categories
+  - Centralized category management page
 - **User Management**: CRUD users with role management (Admin/User)
 - **Borrowing Management**: 
-  - Approve/Reject borrowing requests
-  - Mark items as borrowed/returned
-  - View borrowing details
-- **Movement History**: Track item movements
+  - Approve/Reject borrowing requests with reason
+  - QR Scanner for item pickup and return validation
+  - QR Scanner for item identification
+  - Admin can directly return items without waiting for user request
+  - Prevent duplicate borrowing requests
+  - Support multiple users borrowing same item (for items with stock > 1)
+  - View borrowing details with complete history
+- **Notification System**:
+  - Real-time notifications for admins and users
+  - Mark all as read functionality
+  - Auto-notification for borrowing status changes
+- **Movement History**: Track all item movements (in/out) with detailed information
 - **Export Data**: Export data to Excel or PDF (Items, Users, Borrowings, Movements)
 ## 🛠️ Tech Stack
 
@@ -146,30 +160,43 @@ After seeding the database, you can use the following default credentials to log
 
 ### Tables
 - `users` - User Data (admin & user)
-- `barangs` - Item Data
-- `borrowings` - Borrowing Data
-- `movements` - Item Movement History
-- `notifications` - System Notifications
+- `barangs` - Item Data (with manufacturer, model, serial_number, asset_tag, is_hidden)
+- `categories` - Category Management
+- `borrowings` - Borrowing Data (with reject_reason)
+- `barang_movements` - Item Movement History (in/out tracking)
+- `notifications` - Real-time System Notifications
 
 ## 🎯 How To Use
 
 ### For Users:
 1. Log in to the system
-2. Browse available items on the dashboard
+2. Browse available items on the dashboard (hidden items won't be shown)
 3. Click "Borrow Now" to submit a borrowing request
 4. Wait for admin approval
-5. Check borrowing status in "Borrowing History"
-6. If status is Waiting Pickup, please go to the item pickup location
+5. Check borrowing status and receive notifications in real-time
+6. If status is Waiting Pickup, go to the item pickup location
+7. Request return when finished using the item
+8. Download borrowing receipt in PDF format
 
 ### For Admin:
 1. Log in as admin
-2. Manage item, user, and borrowing data
-3. Approve/reject borrowing requests
-4. Mark items as borrowed/returned
-5. Monitor item movements in Movement History
-6. Export data for reporting
-7. Print Receipt when borrowing is approved
-8. Scan QR to validate item pickup and return
+2. Manage items with advanced features:
+   - Add items with manufacturer, model, serial number, and asset tag
+   - Auto-fill form from existing items
+   - Generate unique QR codes (auto or from asset tag/serial number)
+   - Hide items from user dashboard
+   - Track stock and movement history
+3. Manage categories from dedicated settings page
+4. Approve/reject borrowing requests with custom rejection reasons
+5. Use QR Scanner for three modes:
+   - **Pickup Mode**: Validate item pickup by scanning QR code
+   - **Return Mode**: Validate item return or admin can directly return items
+   - **Identify Mode**: Scan QR code to quickly find and view item details
+6. Monitor all item movements with detailed tracking
+7. Manage user accounts and roles
+8. Export comprehensive reports to Excel or PDF
+9. Print QR codes and borrowing receipts
+10. Receive notifications for all borrowing activities
 
 ## 📸 Screenshots
 
@@ -185,8 +212,11 @@ Overview of system statistics with charts, quick actions, and a table of borrowe
 Shows a list of items with CRUD features, QR Code generation, and stock management.
 <img src="public/Images/barangsindex_preview.png">
 
-### QR Code Feature
-Generate and print QR codes for each item to facilitate the validation process for item pickup and return.
+### QR Code Scanner with Multiple Modes
+Advanced QR scanner with three modes:
+- **Pickup Mode**: Validate item pickup by scanning QR code
+- **Return Mode**: Validate item return or admin can directly return items
+- **Identify Mode**: Quickly find item details by scanning QR code
 <img src="public/Images/qrscanner_preview.png">
 
 ### Item Movement History
@@ -201,12 +231,15 @@ and many more...
 
 ## 🔐 Security Features
 
-- Authentication dengan Laravel Breeze
+- Authentication with Laravel Breeze
 - Role-based Access Control (Admin/User)
 - CSRF Protection
 - XSS Protection
 - SQL Injection Prevention
 - Password Hashing
+- Unique validation for serial numbers and asset tags
+- Borrowing duplicate prevention
+- Stock validation to prevent over-borrowing
 
 ## 📱 Responsive Design
 
@@ -237,6 +270,10 @@ Developed with ❤️ by Darma
 - [Simple QR Code](https://www.simplesoftware.io) - QR Code generator
 - [DomPDF](https://github.com/dompdf/dompdf) - PDF generator
 - [Laravel Excel](https://laravel-excel.com) - Excel export/import
+
+---
+
+**TL;DR**: Some variables and parts of the code documentation are written in Indonesian. Sorry about that.
 
 ---
 
