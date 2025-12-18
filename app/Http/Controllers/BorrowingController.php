@@ -112,29 +112,6 @@ class BorrowingController extends Controller
         return redirect()->route('pinjam.history')->with('success', 'Borrowing request submitted successfully. Waiting for admin approval.');
     }
 
-    public function returnItem(Request $request, Borrowing $borrowing)
-    {
-        if ($borrowing->user_id !== Auth::id()){
-            abort(403, 'You do not have access to return this borrowing.');
-        }
-
-        if ($borrowing->status !== 'borrowed'){
-            return redirect()->back()->with('error', 'This item is not currently borrowed.');
-        }
-
-        $borrowing->update(['status' => 'waiting_return']);
-
-        // Kirim notifikasi ke semua admin
-        NotificationController::notifyAdmins(
-            'return_request',
-            'Return Request',
-            Auth::user()->name . ' has requested to return ' . $borrowing->barang->nama_barang,
-            $borrowing->id
-        );
-
-        return redirect()->route('pinjam.history')->with('success', 'Return Request Submitted. Please bring the item to admin for scanning');
-    }
-
     /**
      * Display the specified resource.
      */
@@ -237,5 +214,28 @@ class BorrowingController extends Controller
         $pdf->setPaper('a4');
         
         return $pdf->stream('Borrowing_Receipt_'. $borrowing->id .'.pdf');
+    }
+
+     public function returnItem(Request $request, Borrowing $borrowing)
+    {
+        if ($borrowing->user_id !== Auth::id()){
+            abort(403, 'You do not have access to return this borrowing.');
+        }
+
+        if ($borrowing->status !== 'borrowed'){
+            return redirect()->back()->with('error', 'This item is not currently borrowed.');
+        }
+
+        $borrowing->update(['status' => 'waiting_return']);
+
+        // Kirim notifikasi ke semua admin
+        NotificationController::notifyAdmins(
+            'return_request',
+            'Return Request',
+            Auth::user()->name . ' has requested to return ' . $borrowing->barang->nama_barang,
+            $borrowing->id
+        );
+
+        return redirect()->route('pinjam.history')->with('success', 'Return Request Submitted. Please bring the item to admin for scanning');
     }
 }

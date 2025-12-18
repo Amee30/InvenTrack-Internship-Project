@@ -20,13 +20,42 @@
                 <!-- Form Card -->
                 <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg border border-gray-200 dark:border-gray-700">
                     <div class="p-6 text-gray-900 dark:text-white">
-                        <div class="flex items-center mb-6">
-                            <div class="w-10 h-10 bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center mr-3">
-                                <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                                </svg>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center mr-3">
+                                    <svg class="w-6 h-6 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                    </svg>
+                                </div>
+                                <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Add New Item</h3>
                             </div>
-                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Add New Item</h3>
+                            
+                            <!-- Dropdown Button -->
+                            <div class="relative" x-data="{ open: false }">
+                                <button @click="open = !open" type="button" 
+                                        class="inline-flex items-center justify-center bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                                    </svg>
+                                    Settings
+                                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </button>
+                                
+                                <div x-show="open" @click.away="open = false"
+                                     class="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-10">
+                                    <div class="py-1">
+                                        <a href="{{ route('admin.categories.index') }}" 
+                                           class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">
+                                            <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+                                            </svg>
+                                            Manage Categories
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <form method="POST" action="{{ route('admin.barang.store') }}" enctype="multipart/form-data" class="space-y-6">
@@ -46,6 +75,8 @@
                                         <option value="{{ $barang->id }}" 
                                                 data-nama="{{ $barang->nama_barang }}"
                                                 data-kategori="{{ $barang->kategori }}"
+                                                data-manufacturer="{{ $barang->manufacturer ?? '' }}"
+                                                data-model="{{ $barang->model ?? '' }}"
                                                 data-source="{{ $barang->source ?? '' }}"
                                                 data-foto="{{ $barang->foto ? asset('storage/' . $barang->foto) : '' }}">
                                             {{ $barang->nama_barang }} - {{ $barang->kategori }}
@@ -56,7 +87,7 @@
                                     Select an item to automatically fill the form with its details
                                 </p>
                             </div>
-    
+
                             <!-- Item Name -->
                             <div>
                                 <label for="nama_barang" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -73,23 +104,57 @@
                                     placeholder="Enter item name" />
                                 <x-input-error :messages="$errors->get('nama_barang')" class="mt-2" />
                             </div>
-    
-                            <!-- Category -->
+
+                            <!-- Category Dropdown -->
                             <div>
                                 <label for="kategori" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Category <span class="text-red-500">*</span>
                                 </label>
-                                <x-text-input 
+                                <select 
                                     id="kategori" 
-                                    class="block mt-1 w-full bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400" 
-                                    type="text" 
-                                    name="kategori" 
-                                    :value="old('kategori')" 
-                                    required 
-                                    placeholder="Enter category" />
+                                    name="kategori"
+                                    class="block mt-1 w-full bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400 rounded-md shadow-sm"
+                                    required>
+                                    <option value="">-- Select Category --</option>
+                                    @foreach($categories as $category)
+                                        <option value="{{ $category->name }}" {{ old('kategori') == $category->name ? 'selected' : '' }}>
+                                            {{ $category->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
                                 <x-input-error :messages="$errors->get('kategori')" class="mt-2" />
                             </div>
-    
+
+                            <!-- Manufacturer -->
+                            <div>
+                                <label for="manufacturer" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Manufacturer
+                                </label>
+                                <x-text-input 
+                                    id="manufacturer" 
+                                    class="block mt-1 w-full bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400" 
+                                    type="text" 
+                                    name="manufacturer" 
+                                    :value="old('manufacturer')" 
+                                    placeholder="Enter manufacturer (optional)" />
+                                <x-input-error :messages="$errors->get('manufacturer')" class="mt-2" />
+                            </div>
+
+                            <!-- Model -->
+                            <div>
+                                <label for="model" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Model
+                                </label>
+                                <x-text-input 
+                                    id="model" 
+                                    class="block mt-1 w-full bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400" 
+                                    type="text" 
+                                    name="model" 
+                                    :value="old('model')" 
+                                    placeholder="Enter model (optional)" />
+                                <x-input-error :messages="$errors->get('model')" class="mt-2" />
+                            </div>
+
                             <!-- Serial Number -->
                             <div>
                                 <label for="serial_number" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -104,7 +169,22 @@
                                     placeholder="Enter serial number (optional)" />
                                 <x-input-error :messages="$errors->get('serial_number')" class="mt-2" />
                             </div>
-    
+
+                            <!-- Asset Tag -->
+                            <div>
+                                <label for="asset_tag" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Asset Tag
+                                </label>
+                                <x-text-input 
+                                    id="asset_tag" 
+                                    class="block mt-1 w-full bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-indigo-500 dark:focus:ring-indigo-400" 
+                                    type="text" 
+                                    name="asset_tag" 
+                                    :value="old('asset_tag')" 
+                                    placeholder="Enter asset tag (optional)" />
+                                <x-input-error :messages="$errors->get('asset_tag')" class="mt-2" />
+                            </div>
+
                             <!-- Initial Stock -->
                             <div>
                                 <label for="stok" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -121,7 +201,7 @@
                                     placeholder="Enter initial stock quantity" />
                                 <x-input-error :messages="$errors->get('stok')" class="mt-2" />
                             </div>
-    
+
                             <!-- Source -->
                             <div>
                                 <label for="source" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -137,7 +217,7 @@
                                     placeholder="Example: From Warehouse" />
                                 <x-input-error :messages="$errors->get('source')" class="mt-2" />
                             </div>
-    
+
                             <!-- Item Photo -->
                             <div>
                                 <label for="foto" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -169,7 +249,7 @@
                                 
                                 <x-input-error :messages="$errors->get('foto')" class="mt-2" />
                             </div>
-    
+
                             <!-- Action Buttons -->
                             <div class="flex items-center justify-end gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
                                 <a href="{{ route('admin.barang.index') }}" 
@@ -197,33 +277,38 @@
             const selectedOption = select.options[select.selectedIndex];
             
             if (selectedOption.value) {
-                // Fill form fields
                 document.getElementById('nama_barang').value = selectedOption.dataset.nama || '';
                 document.getElementById('kategori').value = selectedOption.dataset.kategori || '';
+                document.getElementById('manufacturer').value = selectedOption.dataset.manufacturer || '';
+                document.getElementById('model').value = selectedOption.dataset.model || '';
+                
+                // Keep serial number and asset tag empty
+                document.getElementById('serial_number').value = '';
+                document.getElementById('asset_tag').value = '';
+                
                 document.getElementById('source').value = selectedOption.dataset.source || '';
                 
-                // Keep serial number empty
-                document.getElementById('serial_number').value = '';
+                removeImage();
+
+                const dropzone = document.getElementById('dropzone');
+                const originalHTML = dropzone.innerHTML;
+
+                setTimeout(() => {
+                    dropzone.innerHTML = originalHTML;
+                }, 3000);
                 
-                // Handle photo preview
-                const fotoUrl = selectedOption.dataset.foto;
-                if (fotoUrl) {
-                    const preview = document.getElementById('preview');
-                    const previewContainer = document.getElementById('imagePreview');
-                    
-                    preview.src = fotoUrl;
-                    previewContainer.classList.remove('hidden');
-                }
             } else {
-                // Clear form if no item selected
                 document.getElementById('nama_barang').value = '';
                 document.getElementById('kategori').value = '';
-                document.getElementById('source').value = '';
+                document.getElementById('manufacturer').value = '';
+                document.getElementById('model').value = '';
                 document.getElementById('serial_number').value = '';
+                document.getElementById('asset_tag').value = '';
+                document.getElementById('source').value = '';
                 removeImage();
             }
         }
-
+        
         const dropzone = document.getElementById('dropzone');
         const fileInput = document.getElementById('foto');
         

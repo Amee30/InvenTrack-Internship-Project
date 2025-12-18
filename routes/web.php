@@ -8,6 +8,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\BarangMovementController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\CategoryController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -49,9 +50,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     // Gunakan resource kecuali show
     Route::resource('barang', AdminController::class)->except(['show']);
-    
     Route::resource('users', UserController::class);
     Route::resource('movements', BarangMovementController::class);
+    route::resource('categories', CategoryController::class)->except(['show', 'create', 'edit']);
     
     // Route untuk AJAX requests
     Route::get('/barang/{id}/details', [AdminController::class, 'getDetails'])->name('barang.details');
@@ -63,6 +64,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/qr-scanner', [AdminController::class, 'showQrScanner'])->name('qr-scanner');
     Route::post('/qr-scan/pickup', [AdminController::class, 'scanPickup'])->name('qr.pickup');
     Route::post('/qr-scan/return', [AdminController::class, 'scanReturn'])->name('qr.return');
+    Route::get('/barang/identify', [AdminController::class, 'identifyItem'])->name('barang.identify');
 
     // Export Routes
     Route::get('/export', [ExportController::class, 'showExportOptions'])->name('export.options');

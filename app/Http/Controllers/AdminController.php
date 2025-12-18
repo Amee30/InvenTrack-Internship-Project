@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Carbon;
+
+
 use App\Models\BarangMovement;
 use Illuminate\Http\Request;
 use App\Models\Barangs;
 use App\Models\Borrowing;
+use App\Models\Category;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -32,6 +36,9 @@ class AdminController extends Controller
         return view('admin.dashboard', compact('barangs', 'borrowing', 'totalBarangs', 'totalJenisBarang', 'totalUser', 'activeBorrowers', 'barangMasuk', 'barangKeluar'));
     }
 
+    /**
+     * Approve borrowing request
+     */
     public function approve(Request $request, $borrowing_id)
     {
         // Cari peminjaman berdasarkan ID
@@ -59,6 +66,45 @@ class AdminController extends Controller
         return redirect()->back()->with('success', 'Borrowing approved. The item is ready for pickup.');
     }
 
+    /**
+     * Reject borrowing request
+     */
+    public function reject(Request $request, $borrowing_id)
+    {
+        // Validasi request
+        $request->validate([
+            'reject_reason' => 'required|string|max:255',
+        ]);
+
+        // Cari peminjaman berdasarkan ID
+        $borrowing = Borrowing::findOrFail($borrowing_id);
+
+        // Pastikan status masih pending
+        if ($borrowing->status !== 'pending') {
+            return redirect()->back()->with('error', 'Only pending borrowings can be rejected.');
+        }
+
+        // Update status peminjaman menjadi 'rejected' dan tambahkan alasan
+        $borrowing->update([
+            'status' => 'rejected',
+            'reject_reason' => $request->reject_reason,
+        ]);
+
+        // Kirim notifikasi ke user
+        NotificationController::createNotification(
+            $borrowing->user_id,
+            'borrowing_rejected',
+            'Borrowing Request Rejected',
+            'Your borrowing request for ' . $borrowing->barang->nama_barang . ' has been rejected. Reason: ' . $request->reject_reason,
+            $borrowing->id
+        );
+
+        return redirect()->back()->with('success', 'Borrowing request rejected successfully.');
+    }
+
+    /**
+     * Scan QR Code for Pickup
+     */
     public function scanPickup(Request $request)
     {
         $request->validate([
@@ -120,6 +166,9 @@ class AdminController extends Controller
         ]);
     }
 
+    /**
+     * Scan QR Code for Return
+     */
     public function scanReturn(Request $request)
     {
         $request->validate([
@@ -136,7 +185,7 @@ class AdminController extends Controller
         }
 
         $borrowing = Borrowing::where('barang_id', $barang->id)
-            ->where('status', 'waiting_return')
+            ->whereIn('status', ['waiting_return', 'borrowed'])
             ->orderBy('created_at', 'desc')
             ->first();
 
@@ -181,41 +230,116 @@ class AdminController extends Controller
         ]);
     }
 
+    /**
+     * Show QR Scanner Page
+     */
     public function showQrScanner()
     {
         return view('admin.qr-scanner');
     }
 
-    // public function return(Request $request, $borrowing_id)
-    // {
-    //     // Temukan peminjam berdasarkan ID
-    //     $borrowing = Borrowing::with('barang', 'user')->findOrFail($borrowing_id);
-
-    //     // Pastikan peminjaman ada dan statusnya adalah 'borrowed'
-    //     $borrowing->update(['status' => 'returned']);
-
-    //     if ($borrowing->barang) {
-    //         $borrowing->barang->increment('stok');
-    //         // Catat pergerakan barang masuk
-    //         BarangMovement::create([
-    //             'barang_id' => $borrowing->barang_id,
-    //             'type' => 'in',
-    //             'quantity' => 1,
-    //             'source' => 'Return Borrowing',
-    //             'reason' => 'Returned by ' . $borrowing->user->name,
-    //             'date' => now()->format('Y-m-d'),
-    //             'notes' => 'Return from Borrower ID ' . $borrowing->id,
-    //             'user_id' => Auth::id(),
-    //         ]);
-    //     }
-
-
-    //     return redirect()->back()->with('success', 'The item has been returned.');
-    // }
-
-    
     /**
-     * Display a listing of the resource.
+     * Identify item by QR code
+     */
+    public function identifyItem(Request $request)
+    {
+        $qrCode = $request->input('qr_code');
+        
+        if (!$qrCode) {
+            return response()->json([
+                'success' => false,
+                'message' => 'QR code is required.'
+            ], 400);
+        }
+
+        $barang = Barangs::where('qr_code', $qrCode)->first();
+
+        if (!$barang) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Item not found with this QR code.'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Item found.',
+            'barang_id' => $barang->id,
+            'nama_barang' => $barang->nama_barang
+        ]);
+    }
+
+     /**
+     * Get item details for AJAX request in modal view 
+     */
+    public function getDetails($id)
+    {
+    try {
+        $barang = Barangs::findOrFail($id);
+        
+        return response()->json([
+            'id' => $barang->id,
+            'nama_barang' => $barang->nama_barang,
+            'kategori' => $barang->kategori,
+            'manufacturer' => $barang->manufacturer ?? null,
+            'model' => $barang->model ?? null,
+            'serial_number' => $barang->serial_number ?? null,
+            'asset_tag' => $barang->asset_tag ?? null,
+            'stok' => $barang->stok,
+            'qr_code' => $barang->qr_code,
+            'is_hidden' => $barang->is_hidden,
+            'created_at' => $barang->created_at->format('d M Y H:i'),
+            'created_at_diff' => $barang->created_at->diffForHumans(),
+            'updated_at' => $barang->updated_at->format('d M Y H:i'),
+            'updated_at_diff' => $barang->updated_at->diffForHumans(),
+        ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Item not found',
+                'message' => $e->getMessage()
+            ], 404);
+        }
+    }
+
+     /**
+     * Generate kode qr code for AJAX request
+     */
+    public function getQrCode($id)
+    {
+        try {
+            $barang = Barangs::findOrFail($id);
+            
+            // Generate QR Code sebagai string
+            $qrCodeSvg = $barang->generateQrCodeImage();
+            
+            return response()->json([
+                'qr_code' => $qrCodeSvg, 
+                'code' => $barang->qr_code,
+                'nama_barang' => $barang->nama_barang
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'QR Code not found',
+                'message' => $e->getMessage()
+            ], 404);
+        }
+    }
+
+    public function toggleVisibility(Barangs $barang)
+    {
+        $barang->update(
+            ['is_hidden' => !$barang->is_hidden]
+        );
+
+        $status = $barang->is_hidden ? 'hidden' : 'visible';
+        return redirect()->back()->with('success', "Item visibility changed. The item is now {$status}.");
+    }
+    
+
+    /**
+     * CRUD for Barangs -------------------------------------------------------------
+     * 
+     * Display a listing of the resource of Barangs.
      */
     public function index(Request $request)
     {
@@ -242,8 +366,13 @@ class AdminController extends Controller
      */
     public function create()
     {
-        $barangs = Barangs::all();
-        return view('admin.barangs.create', compact('barangs'));
+        $categories = Category::orderBy('name')->get();
+        $barangs = Barangs::select('id', 'nama_barang', 'kategori', 'manufacturer', 'model', 'foto')
+            ->distinct('nama_barang')
+            ->orderBy('nama_barang')
+            ->get()
+            ->unique('nama_barang');
+        return view('admin.barangs.create', compact('categories', 'barangs'));
     }
 
     /**
@@ -254,13 +383,24 @@ class AdminController extends Controller
         $request->validate([
             'nama_barang' => 'required|string|max:255',
             'kategori' => 'required|string|max:255',
-            'serial_number' => 'nullable|string|max:255',
+            'manufacturer' => 'nullable|string|max:255',
+            'model' => 'nullable|string|max:255',
+            'serial_number' => 'nullable|string|max:255|unique:barangs,serial_number',
+            'asset_tag' => 'nullable|string|max:255|unique:barangs,asset_tag',
             'stok' => 'required|integer|min:0',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'source' => 'required|string|max:255',
         ]);
         
-        $data = $request->only(['nama_barang', 'kategori', 'serial_number' ,'stok']);
+        $data = $request->only(['nama_barang', 'kategori', 'manufacturer', 'model', 'serial_number', 'asset_tag', 'stok']);
+        
+        // Logika QR Code: prioritas asset_tag > serial_number > auto generate
+        if (!empty($request->asset_tag)) {
+            $data['qr_code'] = $request->asset_tag;
+        } elseif (!empty($request->serial_number)) {
+            $data['qr_code'] = $request->serial_number;
+        }
+        // Jika keduanya kosong, biarkan auto generate oleh model (boot method)
         
         if ($request->hasFile('foto')) {
             // Simpan file di storage/app/public/barangs
@@ -294,24 +434,12 @@ class AdminController extends Controller
     }
 
     /**
-     * Get item details for AJAX request
-     */
-    public function getDetails(string $id)
-    {
-        try {
-            $barang = Barangs::findOrFail($id);
-            return response()->json($barang);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Item not found'], 404);
-        }
-    }
-
-    /**
      * Show the form for editing the specified resource.
      */
     public function edit(Barangs $barang)
     {
-        return view('admin.barangs.edit', compact('barang'));
+        $categories = Category::orderBy('name')->get();
+        return view('admin.barangs.edit', compact('barang', 'categories'));
     }
 
     /**
@@ -322,12 +450,15 @@ class AdminController extends Controller
         $request->validate([
             'nama_barang' => 'required|string|max:255',
             'kategori' => 'required|string|max:255',
-            'serial_number' => 'nullable|string|max:255',
+            'manufacturer' => 'nullable|string|max:255',
+            'model' => 'nullable|string|max:255',
+            'serial_number' => 'nullable|string|max:255|unique:barangs,serial_number,' . $barang->id,
+            'asset_tag' => 'nullable|string|max:255|unique:barangs,asset_tag,' . $barang->id,
             'stok' => 'required|integer|min:0',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
         
-        $data = $request->only(['nama_barang', 'kategori', 'serial_number' ,'stok']);
+        $data = $request->only(['nama_barang', 'kategori', 'manufacturer', 'model', 'serial_number', 'asset_tag', 'stok']);
 
         $oldStock = $barang->stok;
         $newStock = $request->stok;
@@ -372,74 +503,8 @@ class AdminController extends Controller
         $barang->delete();
         return redirect()->route('admin.barang.index')->with('success', 'Item deleted successfully.');
     }
-    
-    /**
-     * Reject borrowing request
-     */
-    public function reject(Request $request, $borrowing_id)
-    {
-        // Validasi request
-        $request->validate([
-            'reject_reason' => 'required|string|max:255',
-        ]);
-
-        // Cari peminjaman berdasarkan ID
-        $borrowing = Borrowing::findOrFail($borrowing_id);
-
-        // Pastikan status masih pending
-        if ($borrowing->status !== 'pending') {
-            return redirect()->back()->with('error', 'Only pending borrowings can be rejected.');
-        }
-
-        // Update status peminjaman menjadi 'rejected' dan tambahkan alasan
-        $borrowing->update([
-            'status' => 'rejected',
-            'reject_reason' => $request->reject_reason,
-        ]);
-
-        // Kirim notifikasi ke user
-        NotificationController::createNotification(
-            $borrowing->user_id,
-            'borrowing_rejected',
-            'Borrowing Request Rejected',
-            'Your borrowing request for ' . $borrowing->barang->nama_barang . ' has been rejected. Reason: ' . $request->reject_reason,
-            $borrowing->id
-        );
-
-        return redirect()->back()->with('success', 'Borrowing request rejected successfully.');
-    }
 
     /**
-     * Generate kode qr code for AJAX request
+     * -------------------------------------------------------------
      */
-    public function getQrCode($id)
-    {
-        try {
-            $barang = Barangs::findOrFail($id);
-            
-            // Generate QR Code sebagai string
-            $qrCodeSvg = $barang->generateQrCodeImage();
-            
-            return response()->json([
-                'qr_code' => $qrCodeSvg, 
-                'code' => $barang->qr_code,
-                'nama_barang' => $barang->nama_barang
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'QR Code not found',
-                'message' => $e->getMessage()
-            ], 404);
-        }
-    }
-
-    public function toggleVisibility(Barangs $barang)
-    {
-        $barang->update(
-            ['is_hidden' => !$barang->is_hidden]
-        );
-
-        $status = $barang->is_hidden ? 'hidden' : 'visible';
-        return redirect()->back()->with('success', "Item visibility changed. The item is now {$status}.");
-    }
 }

@@ -33,6 +33,14 @@
                                     <span class="hidden sm:inline">Return Items</span>
                                     <span class="sm:hidden">Return</span>
                                 </button>
+                                <button id="tab-identify" onclick="switchScannerTab('identify')" 
+                                        class="px-4 sm:px-6 py-2 sm:py-3 font-medium text-sm sm:text-base text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors whitespace-nowrap">
+                                    <svg class="w-4 h-4 sm:w-5 sm:h-5 inline mr-1 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                    <span class="hidden sm:inline">Identify Item</span>
+                                    <span class="sm:hidden">Identify</span>
+                                </button>
                             </div>
                         </div>
 
@@ -150,6 +158,12 @@
                 setTimeout(() => {
                     startScanner();
                 }, 500);
+            } else if (mode === 'identify') {
+                switchScannerTab('identify');
+                // Auto-start scanner jika dari link identify
+                setTimeout(() => {
+                    startScanner();
+                }, 500);
             }
         });
 
@@ -170,10 +184,13 @@
             
             document.getElementById('tab-pickup').className = mode === 'pickup' ? activeClass : inactiveClass;
             document.getElementById('tab-return').className = mode === 'return' ? activeClass : inactiveClass;
+            document.getElementById('tab-identify').className = mode === 'identify' ? activeClass : inactiveClass;
             
             // Update title
-            document.getElementById('scanner-title').textContent = 
-                mode === 'pickup' ? 'Scan QR for Pickup' : 'Scan QR for Return';
+            let titleText = 'Scan QR for Pickup';
+            if (mode === 'return') titleText = 'Scan QR for Return';
+            if (mode === 'identify') titleText = 'Scan QR to Identify Item';
+            document.getElementById('scanner-title').textContent = titleText;
             
             // Reset result
             displayWaitingState();
@@ -253,6 +270,12 @@
         }
 
         function processQrCode(qrCode) {
+            // Handle identify mode - redirect to item details
+            if (currentMode === 'identify') {
+                processIdentifyMode(qrCode);
+                return;
+            }
+            
             const url = currentMode === 'pickup' 
                 ? '{{ route("admin.qr.pickup") }}'
                 : '{{ route("admin.qr.return") }}';
@@ -428,6 +451,51 @@
             while (recentDiv.children.length > 5) {
                 recentDiv.removeChild(recentDiv.lastChild);
             }
+        }
+
+        function processIdentifyMode(qrCode) {
+            // Show loading
+            document.getElementById('scan-result').innerHTML = `
+                <div class="text-center">
+                    <svg class="animate-spin h-10 w-10 sm:h-12 sm:w-12 mx-auto text-blue-600 dark:text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600 dark:text-gray-300">Identifying item...</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 break-all px-2">${qrCode}</p>
+                </div>
+            `;
+            
+            // Fetch item by QR code
+            fetch(`{{ url('/admin/barang/identify') }}?qr_code=${encodeURIComponent(qrCode)}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.barang_id) {
+                    // Redirect to item management page with item highlighted
+                    window.location.href = `{{ url('/admin/barang') }}?highlight=${data.barang_id}`;
+                } else {
+                    // Show error
+                    displayResult({
+                        success: false,
+                        message: data.message || 'Item not found. Please check the QR code.'
+                    }, qrCode);
+                    updateStatus('Not Found', 'bg-red-500 dark:bg-red-600 text-white');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                displayResult({
+                    success: false,
+                    message: 'Network error. Please try again.'
+                }, qrCode);
+                updateStatus('Error', 'bg-red-500 dark:bg-red-600 text-white');
+            });
         }
 
         // Cleanup on page unload

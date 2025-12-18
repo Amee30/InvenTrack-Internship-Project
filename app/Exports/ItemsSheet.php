@@ -17,13 +17,15 @@ class ItemsSheet implements FromCollection, WithHeadings, WithTitle, WithStyles,
             return [
                 'no' => $index + 1,
                 'nama_barang' => $item->nama_barang,
-                'serial_number' => $item->serial_number ?? '-',
                 'kategori' => $item->kategori,
+                'manufacturer' => $item->manufacturer ?? '-',
+                'model' => $item->model ?? '-',
+                'serial_number' => $item->serial_number ?? '-',
+                'asset_tag' => $item->asset_tag ?? '-',
                 'stok' => $item->stok,
-                'lokasi' => $item->lokasi ?? '-',
-                'kondisi' => $item->kondisi,
                 'qr_code' => $item->qr_code,
                 'created_at' => $item->created_at->format('d/m/Y H:i'),
+                'updated_at' => $item->updated_at->format('d/m/Y H:i'),
             ];
         });
     }
@@ -33,13 +35,15 @@ class ItemsSheet implements FromCollection, WithHeadings, WithTitle, WithStyles,
         return [
             'No',
             'Item Name',
-            'Serial Number',
             'Category',
+            'Manufacturer',
+            'Model',
+            'Asset Tag',
+            'Serial Number',
             'Stock',
-            'Location',
-            'Condition',
             'QR Code',
             'Created At',
+            'Updated At',
         ];
     }
 
@@ -61,12 +65,14 @@ class ItemsSheet implements FromCollection, WithHeadings, WithTitle, WithStyles,
             'A' => 5,
             'B' => 30,
             'C' => 20,
-            'D' => 15,
-            'E' => 10,
-            'F' => 20,
-            'G' => 15,
-            'H' => 25,
-            'I' => 20,
+            'D' => 20,
+            'E' => 30,
+            'F' => 25,
+            'G' => 25,
+            'H' => 5,
+            'I' => 25,
+            'J' => 20,
+            'K' => 20,
         ];
     }
 }

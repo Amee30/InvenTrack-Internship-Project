@@ -14,7 +14,10 @@ class Barangs extends Model
     protected $fillable = [
         'nama_barang',
         'kategori',
+        'manufacturer',
+        'model',
         'serial_number',
+        'asset_tag',
         'qr_code',
         'stok',
         'foto',
@@ -36,7 +39,7 @@ class Barangs extends Model
 
         static::creating(function ($barang) {
             if (empty($barang->qr_code)) {
-                $barang->qr_code = 'BRG' . Str::upper(Str::random(20));
+                $barang->qr_code = 'BRG' . Str::upper(Str::random(10));
             }
         });
     }

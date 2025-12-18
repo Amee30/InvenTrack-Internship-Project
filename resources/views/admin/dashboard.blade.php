@@ -236,11 +236,13 @@
                                                             </svg>
                                                         </button>
                                                     @elseif($peminjaman->status == 'borrowed')
-                                                        <span class="p-1 text-xs text-gray-400 dark:text-gray-500" title="Waiting for user to request return">
+                                                        <a href="{{ route('admin.qr-scanner', ['mode' => 'return']) }}" 
+                                                           class="p-1 bg-orange-100 dark:bg-orange-900 hover:bg-orange-200 dark:hover:bg-orange-800 text-orange-600 dark:text-orange-400 rounded transition-colors inline-block"
+                                                           title="Scan QR to return item">
                                                             <svg class="h-4 w-4 sm:h-5 sm:w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                                                             </svg>
-                                                        </span>
+                                                        </a>
                                                     @elseif($peminjaman->status == 'waiting_pickup')
                                                         <a href="{{ route('admin.qr-scanner', ['mode' => 'pickup']) }}" 
                                                            class="p-1 bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600 dark:text-blue-400 rounded transition-colors inline-block"

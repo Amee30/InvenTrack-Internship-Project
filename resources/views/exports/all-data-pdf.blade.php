@@ -94,11 +94,15 @@
             <tr>
                 <th width="3%">No</th>
                 <th width="20%">Item Name</th>
-                <th width="12%">Serial Number</th>
                 <th width="10%">Category</th>
+                <th width="20%">Manufacturer</th>
+                <th width="15%">Model</th>
+                <th width="10%">Asset Tag</th>
+                <th width="12%">Serial Number</th>
                 <th width="6%">Stock</th>
                 <th width="15%">QR Code</th>
                 <th width="9%">Created</th>
+                <th width="9%">Updated</th>
             </tr>
         </thead>
         <tbody>
@@ -106,11 +110,15 @@
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>{{ $item->nama_barang }}</td>
-                <td>{{ $item->serial_number ?? '-' }}</td>
                 <td>{{ $item->kategori }}</td>
+                <td>{{ $item->manufacturer ?? '-' }}</td>
+                <td>{{ $item->model ?? '-' }}</td>
+                <td>{{ $item->asset_tag ?? '-' }}</td>
+                <td>{{ $item->serial_number ?? '-' }}</td>
                 <td class="text-center">{{ $item->stok }}</td>
                 <td style="font-size: 7px;">{{ $item->qr_code }}</td>
                 <td>{{ $item->created_at->format('d/m/Y') }}</td>
+                <td>{{ $item->updated_at->format('d/m/Y') }}</td>
             </tr>
             @endforeach
         </tbody>
