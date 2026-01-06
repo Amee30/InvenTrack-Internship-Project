@@ -25,7 +25,7 @@ class BarangsSeeder extends Seeder
 
         Barangs::create([
             'nama_barang' => 'Proyektor Epson',
-            'kategori' => 'Proyektor',
+            'kategori' => 'Projektor',
             'manufacturer' => 'Epson',
             'model' => 'EB-S41',
             'serial_number' => 'EP123456',
@@ -35,7 +35,7 @@ class BarangsSeeder extends Seeder
 
         Barangs::create([
             'nama_barang' => 'Kamera Canon EOS',
-            'kategori' => 'Kamera',
+            'kategori' => 'Camera',
             'manufacturer' => 'Canon',
             'model' => 'EOS 1500D',
             'serial_number' => 'CA123456',
@@ -45,7 +45,7 @@ class BarangsSeeder extends Seeder
 
         Barangs::create([
             'nama_barang' => 'Kabel Data Type-C',
-            'kategori' => 'Aksesoris',
+            'kategori' => 'Accessories',
             'stok' => 50,
         ]);
         
