@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use App\Models\Barangs;
 use App\Models\Borrowing;
 use App\Models\Category;
+use App\Models\Location;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -244,7 +245,7 @@ class AdminController extends Controller
     public function identifyItem(Request $request)
     {
         $qrCode = $request->input('qr_code');
-        
+
         if (!$qrCode) {
             return response()->json([
                 'success' => false,
@@ -269,30 +270,30 @@ class AdminController extends Controller
         ]);
     }
 
-     /**
+    /**
      * Get item details for AJAX request in modal view 
      */
     public function getDetails($id)
     {
-    try {
-        $barang = Barangs::findOrFail($id);
-        
-        return response()->json([
-            'id' => $barang->id,
-            'nama_barang' => $barang->nama_barang,
-            'kategori' => $barang->kategori,
-            'manufacturer' => $barang->manufacturer ?? null,
-            'model' => $barang->model ?? null,
-            'serial_number' => $barang->serial_number ?? null,
-            'asset_tag' => $barang->asset_tag ?? null,
-            'stok' => $barang->stok,
-            'qr_code' => $barang->qr_code,
-            'is_hidden' => $barang->is_hidden,
-            'created_at' => $barang->created_at->format('d M Y H:i'),
-            'created_at_diff' => $barang->created_at->diffForHumans(),
-            'updated_at' => $barang->updated_at->format('d M Y H:i'),
-            'updated_at_diff' => $barang->updated_at->diffForHumans(),
-        ]);
+        try {
+            $barang = Barangs::findOrFail($id);
+
+            return response()->json([
+                'id' => $barang->id,
+                'nama_barang' => $barang->nama_barang,
+                'kategori' => $barang->kategori,
+                'manufacturer' => $barang->manufacturer ?? null,
+                'model' => $barang->model ?? null,
+                'serial_number' => $barang->serial_number ?? null,
+                'asset_tag' => $barang->asset_tag ?? null,
+                'stok' => $barang->stok,
+                'qr_code' => $barang->qr_code,
+                'is_hidden' => $barang->is_hidden,
+                'created_at' => $barang->created_at->format('d M Y H:i'),
+                'created_at_diff' => $barang->created_at->diffForHumans(),
+                'updated_at' => $barang->updated_at->format('d M Y H:i'),
+                'updated_at_diff' => $barang->updated_at->diffForHumans(),
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Item not found',
@@ -301,19 +302,19 @@ class AdminController extends Controller
         }
     }
 
-     /**
+    /**
      * Generate kode qr code for AJAX request
      */
     public function getQrCode($id)
     {
         try {
             $barang = Barangs::findOrFail($id);
-            
+
             // Generate QR Code sebagai string
             $qrCodeSvg = $barang->generateQrCodeImage();
-            
+
             return response()->json([
-                'qr_code' => $qrCodeSvg, 
+                'qr_code' => $qrCodeSvg,
                 'code' => $barang->qr_code,
                 'nama_barang' => $barang->nama_barang
             ]);
@@ -334,7 +335,7 @@ class AdminController extends Controller
         $status = $barang->is_hidden ? 'hidden' : 'visible';
         return redirect()->back()->with('success', "Item visibility changed. The item is now {$status}.");
     }
-    
+
 
     /**
      * CRUD for Barangs -------------------------------------------------------------
@@ -343,12 +344,17 @@ class AdminController extends Controller
      */
     public function index(Request $request)
     {
-        $kategori = $request->input('kategori');
+        $kategori    = $request->input('kategori');
+        $location_id = $request->input('location_id');
 
         $barangsQuery = Barangs::query();
 
-        if ($kategori && $kategori !== 'All') {
+        if ($kategori && $kategori !== 'all') {
             $barangsQuery->where('kategori', $kategori);
+        }
+
+        if ($location_id && $location_id !== 'all') {
+            $barangsQuery->where('location_id', $location_id);
         }
 
         $barangs = $barangsQuery->paginate(5);
@@ -358,7 +364,9 @@ class AdminController extends Controller
             ->orderBy('kategori')
             ->pluck('kategori');
 
-        return view('admin.barangs.index', compact('barangs', 'categories', 'kategori'));
+        $locations = Location::orderBy('name')->get();
+
+        return view('admin.barangs.index', compact('barangs', 'categories', 'kategori', 'locations', 'location_id'));
     }
 
     /**
@@ -367,12 +375,13 @@ class AdminController extends Controller
     public function create()
     {
         $categories = Category::orderBy('name')->get();
+        $locations = Location::orderBy('name')->get();
         $barangs = Barangs::select('id', 'nama_barang', 'kategori', 'manufacturer', 'model', 'foto')
             ->distinct('nama_barang')
             ->orderBy('nama_barang')
             ->get()
             ->unique('nama_barang');
-        return view('admin.barangs.create', compact('categories', 'barangs'));
+        return view('admin.barangs.create', compact('categories', 'barangs', 'locations'));
     }
 
     /**
@@ -381,19 +390,21 @@ class AdminController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'nama_barang' => 'required|string|max:255',
-            'kategori' => 'required|string|max:255',
-            'manufacturer' => 'nullable|string|max:255',
-            'model' => 'nullable|string|max:255',
+            'nama_barang'   => 'required|string|max:255',
+            'kategori'      => 'required|string|max:255',
+            'manufacturer'  => 'nullable|string|max:255',
+            'model'         => 'nullable|string|max:255',
             'serial_number' => 'nullable|string|max:255|unique:barangs,serial_number',
-            'asset_tag' => 'nullable|string|max:255|unique:barangs,asset_tag',
-            'stok' => 'required|integer|min:0',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'source' => 'required|string|max:255',
+            'asset_tag'     => 'nullable|string|max:255|unique:barangs,asset_tag',
+            'stok'          => 'required|integer|min:0',
+            'foto'          => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'source'        => 'required|string|max:255',
+            'location_id'   => 'nullable|exists:locations,id',
         ]);
-        
-        $data = $request->only(['nama_barang', 'kategori', 'manufacturer', 'model', 'serial_number', 'asset_tag', 'stok']);
-        
+
+        $data = $request->only(['nama_barang', 'kategori', 'manufacturer', 'model', 'serial_number', 'asset_tag', 'stok', 'location_id']);
+        $data['location_id'] = $request->filled('location_id') ? $request->input('location_id') : null;
+
         // Logika QR Code: prioritas asset_tag > serial_number > auto generate
         if (!empty($request->asset_tag)) {
             $data['qr_code'] = $request->asset_tag;
@@ -401,13 +412,13 @@ class AdminController extends Controller
             $data['qr_code'] = $request->serial_number;
         }
         // Jika keduanya kosong, biarkan auto generate oleh model (boot method)
-        
+
         if ($request->hasFile('foto')) {
             // Simpan file di storage/app/public/barangs
             $path = $request->file('foto')->store('barangs', 'public');
             $data['foto'] = $path;
         }
-        
+
         Barangs::create($data);
 
         BarangMovement::create([
@@ -417,10 +428,10 @@ class AdminController extends Controller
             'source' => $request->source,
             'reason' => 'Initial Stock by admin ',
             'date' => now()->format('Y-m-d'),
-            'notes' => 'Added by admin '. Auth::user()->name,
+            'notes' => 'Added by admin ' . Auth::user()->name,
             'user_id' => Auth::id(),
         ]);
-        
+
         return redirect()->route('admin.barang.index')->with('success', 'Item added successfully.');
     }
 
@@ -439,7 +450,8 @@ class AdminController extends Controller
     public function edit(Barangs $barang)
     {
         $categories = Category::orderBy('name')->get();
-        return view('admin.barangs.edit', compact('barang', 'categories'));
+        $locations = Location::orderBy('name')->get();
+        return view('admin.barangs.edit', compact('barang', 'categories', 'locations'));
     }
 
     /**
@@ -448,17 +460,20 @@ class AdminController extends Controller
     public function update(Request $request, Barangs $barang)
     {
         $request->validate([
-            'nama_barang' => 'required|string|max:255',
-            'kategori' => 'required|string|max:255',
-            'manufacturer' => 'nullable|string|max:255',
-            'model' => 'nullable|string|max:255',
+            'nama_barang'   => 'required|string|max:255',
+            'kategori'      => 'required|string|max:255',
+            'manufacturer'  => 'nullable|string|max:255',
+            'model'         => 'nullable|string|max:255',
             'serial_number' => 'nullable|string|max:255|unique:barangs,serial_number,' . $barang->id,
-            'asset_tag' => 'nullable|string|max:255|unique:barangs,asset_tag,' . $barang->id,
-            'stok' => 'required|integer|min:0',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'asset_tag'     => 'nullable|string|max:255|unique:barangs,asset_tag,' . $barang->id,
+            'stok'          => 'required|integer|min:0',
+            'foto'          => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'location_id'   => 'nullable|exists:locations,id',
         ]);
-        
-        $data = $request->only(['nama_barang', 'kategori', 'manufacturer', 'model', 'serial_number', 'asset_tag', 'stok']);
+
+        $data = $request->only(['nama_barang', 'kategori', 'manufacturer', 'model', 'serial_number', 'asset_tag', 'stok', 'location_id']);
+        // Konversi string kosong dari dropdown menjadi null
+        $data['location_id'] = $request->filled('location_id') ? $request->input('location_id') : null;
 
         $oldStock = $barang->stok;
         $newStock = $request->stok;
@@ -466,29 +481,29 @@ class AdminController extends Controller
 
         $data['stok'] = $newStock;
 
-        
+
         if ($request->hasFile('foto') && $request->file('foto')->isValid()) {
             // Hapus foto lama jika ada
             if ($barang->foto && Storage::disk('public')->exists($barang->foto)) {
                 Storage::disk('public')->delete($barang->foto);
             }
-            
+
             // Simpan file baru
             $path = $request->file('foto')->store('barangs', 'public');
             $data['foto'] = $path;
         }
-        
+
         $barang->update($data);
-        
+
         if ($stockDifference != 0) {
             BarangMovement::create([
                 'barang_id' => $barang->id,
                 'type' => $stockDifference > 0 ? 'in' : 'out',
                 'quantity' => abs($stockDifference),
                 'source' => $stockDifference > 0 ? 'Stock Addition' : 'Stock Reduction',
-                'reason' => $stockDifference > 0 ? 'Stock added by admin '. Auth::user()->name : 'Stock reduced by admin '. Auth::user()->name,
+                'reason' => $stockDifference > 0 ? 'Stock added by admin ' . Auth::user()->name : 'Stock reduced by admin ' . Auth::user()->name,
                 'date' => now()->format('Y-m-d'),
-                'notes' => $stockDifference > 0 ? 'Stock added from '.$oldStock.' to '.$newStock : 'Stock reduced from '.$oldStock.' to '.$newStock,
+                'notes' => $stockDifference > 0 ? 'Stock added from ' . $oldStock . ' to ' . $newStock : 'Stock reduced from ' . $oldStock . ' to ' . $newStock,
                 'user_id' => Auth::id(),
             ]);
         }

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use App\Models\Location;
 
 class Barangs extends Model
 {
@@ -22,6 +23,7 @@ class Barangs extends Model
         'stok',
         'foto',
         'is_hidden',
+        'location_id',
     ];
 
     protected $casts = [
@@ -31,6 +33,11 @@ class Barangs extends Model
     public function borrowings()
     {
         return $this->hasMany(Borrowing::class, 'barang_id');
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class, 'location_id');
     }
 
     protected static function boot()
@@ -50,7 +57,7 @@ class Barangs extends Model
         $qrCode = QrCode::size(200)
             ->margin(2)
             ->generate($this->qr_code);
-        
+
         // Convert HtmlString object ke string
         return (string) $qrCode;
     }

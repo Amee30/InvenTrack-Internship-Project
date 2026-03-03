@@ -9,6 +9,7 @@ use App\Http\Controllers\BarangMovementController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\LocationController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -24,7 +25,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/pinjam/{barangs}', [BorrowingController::class, 'create'])->name('pinjam.create');
     Route::post('/pinjam', [BorrowingController::class, 'store'])->name('pinjam.store');
     Route::post('/pinjam/{borrowing}/return', [BorrowingController::class, 'returnItem'])->name('pinjam.return');
-    
+
     Route::get('/pinjam/{borrowing}/show', [BorrowingController::class, 'show'])->name('pinjam.show');
     Route::delete('/pinjam/{borrowing}', [BorrowingController::class, 'destroy'])->name('pinjam.destroy');
 
@@ -47,17 +48,18 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-    
+
     // Gunakan resource kecuali show
     Route::resource('barang', AdminController::class)->except(['show']);
     Route::resource('users', UserController::class);
     Route::resource('movements', BarangMovementController::class);
     route::resource('categories', CategoryController::class)->except(['show', 'create', 'edit']);
-    
+    Route::resource('locations', LocationController::class)->except(['show', 'create', 'edit']);
+
     // Route untuk AJAX requests
     Route::get('/barang/{id}/details', [AdminController::class, 'getDetails'])->name('barang.details');
     Route::get('/barang/{id}/qr-code', [AdminController::class, 'getQrCode'])->name('barang.qrcode');
-    
+
     Route::post('/peminjaman/{peminjaman}/approve', [AdminController::class, 'approve'])->name('peminjaman.approve');
     Route::post('/peminjaman/{peminjaman}/reject', [AdminController::class, 'reject'])->name('peminjaman.reject');
 
@@ -75,4 +77,4 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
         ->name('barang.toggleVisibility');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';
