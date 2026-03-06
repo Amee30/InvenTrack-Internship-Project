@@ -24,6 +24,7 @@ class Barangs extends Model
         'foto',
         'is_hidden',
         'location_id',
+        'audit_status',
     ];
 
     protected $casts = [

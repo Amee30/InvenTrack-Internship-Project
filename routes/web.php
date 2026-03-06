@@ -10,6 +10,7 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\AuditController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -75,6 +76,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::post('/barang/{barang}/toggle-visibility', [AdminController::class, 'toggleVisibility'])
         ->name('barang.toggleVisibility');
+
+    // Audit Routes
+    Route::get('/audit', [AuditController::class, 'index'])->name('audit.index');
+    Route::post('/audit/{barang}/available', [AuditController::class, 'markAvailable'])->name('audit.available');
+    Route::post('/audit/{barang}/lost', [AuditController::class, 'markLost'])->name('audit.lost');
+    Route::post('/audit/{barang}/move', [AuditController::class, 'moveLocation'])->name('audit.move');
 });
 
 require __DIR__ . '/auth.php';
