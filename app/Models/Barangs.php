@@ -25,10 +25,12 @@ class Barangs extends Model
         'is_hidden',
         'location_id',
         'audit_status',
+        'last_audited_at',
     ];
 
     protected $casts = [
-        'is_hidden' => 'boolean',
+        'is_hidden'       => 'boolean',
+        'last_audited_at' => 'datetime',
     ];
 
     public function borrowings()

@@ -131,6 +131,9 @@
                                                 Category</th>
                                             <th
                                                 class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                Last Audited</th>
+                                            <th
+                                                class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                                 Audit Status</th>
                                             <th
                                                 class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -193,6 +196,37 @@
                                                         class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
                                                         {{ $barang->kategori }}
                                                     </span>
+                                                </td>
+
+                                                {{-- Last Audited --}}
+                                                <td class="px-4 py-4 text-center">
+                                                    @if ($barang->last_audited_at)
+                                                        <div class="flex flex-col items-center">
+                                                            <span
+                                                                class="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                                                {{ $barang->last_audited_at->format('d M Y') }}
+                                                            </span>
+                                                            <span
+                                                                class="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                                                                {{ $barang->last_audited_at->format('H:i') }}
+                                                            </span>
+                                                            <span
+                                                                class="text-xs text-gray-400 dark:text-gray-500 mt-0.5 italic">
+                                                                {{ $barang->last_audited_at->diffForHumans() }}
+                                                            </span>
+                                                        </div>
+                                                    @else
+                                                        <span
+                                                            class="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                                viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2"
+                                                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                            Never
+                                                        </span>
+                                                    @endif
                                                 </td>
 
                                                 {{-- Audit Status --}}

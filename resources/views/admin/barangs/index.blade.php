@@ -164,7 +164,8 @@
                                             <td class="px-6 py-4">
                                                 <div class="flex justify-center items-center gap-2">
                                                     <span
-                                                        class="text-sm font-medium text-gray-900 dark:text-white">{{ $barang->nama_barang }}</span>
+                                                        class="text-sm font-medium text-gray-900 dark:text-white">{{ $barang->nama_barang }}
+                                                        |</span>
                                                     <span
                                                         class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ $barang->asset_tag }}</span>
                                                     @if ($barang->is_hidden)

@@ -35,7 +35,10 @@ class AuditController extends Controller
      */
     public function markAvailable(Request $request, Barangs $barang)
     {
-        $barang->update(['audit_status' => 'available']);
+        $barang->update([
+            'audit_status'    => 'available',
+            'last_audited_at' => now(),
+        ]);
 
         return redirect()->back()->with('success', "Item \"{$barang->nama_barang}\" marked as Available.");
     }
@@ -53,8 +56,9 @@ class AuditController extends Controller
         }
 
         $barang->update([
-            'audit_status' => 'unavailable',
-            'location_id'  => $lostLocation->id,
+            'audit_status'    => 'unavailable',
+            'location_id'     => $lostLocation->id,
+            'last_audited_at' => now(),
         ]);
 
         return redirect()->back()->with('success', "Item \"{$barang->nama_barang}\" marked as Lost and moved to the Lost location.");
@@ -72,8 +76,9 @@ class AuditController extends Controller
         $newLocation = Location::find($request->new_location_id);
 
         $barang->update([
-            'audit_status' => 'available',
-            'location_id'  => $request->new_location_id,
+            'audit_status'    => 'available',
+            'location_id'     => $request->new_location_id,
+            'last_audited_at' => now(),
         ]);
 
         return redirect()
